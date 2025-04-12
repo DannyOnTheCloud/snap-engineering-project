@@ -21,20 +21,22 @@
  *    browser and observe what happens. You should see a fourth "card" appear
  *    with the string you added to the array, but a broken image.
  *
+ * My coding Notes: so I want to replcae hot text images to images that I downloaded but that means I must also replace the const var
  */
 
-const FRESH_PRINCE_URL =
-  "https://upload.wikimedia.org/wikipedia/en/3/33/Fresh_Prince_S1_DVD.jpg";
-const CURB_POSTER_URL =
-  "https://m.media-amazon.com/images/M/MV5BZDY1ZGM4OGItMWMyNS00MDAyLWE2Y2MtZTFhMTU0MGI5ZDFlXkEyXkFqcGdeQXVyMDc5ODIzMw@@._V1_FMjpg_UX1000_.jpg";
-const EAST_LOS_HIGH_POSTER_URL =
-  "https://static.wikia.nocookie.net/hulu/images/6/64/East_Los_High.jpg";
+const Weather_Image = 
+"images/4.png"; //This is the Weather Image
+
+const Moon_Image =
+"images/3.png"; //This is the Moon Phase Image
+const Song_Image =
+"images/5.png"; //This is the Song Image
 
 // This is an array of strings (TV show titles)
 let titles = [
-  "Fresh Prince of Bel Air",
-  "Curb Your Enthusiasm",
-  "East Los High",
+  "Find your Birthdate's Weather",
+  "Find your Birthdate's Moon Phase",
+  "Find your Birthdate's Song of the Year",
 ];
 // Your final submission should have much more data than this, and
 // you should use more than just an array of strings to store it all.
@@ -50,29 +52,29 @@ function showCards() {
 
     // This part of the code doesn't scale very well! After you add your
     // own data, you'll need to do something totally different here.
-    let imageURL = "";
+    let image = "";   //Variable decleration with statement
     if (i == 0) {
-      imageURL = FRESH_PRINCE_URL;
+      image = Weather_Image;
     } else if (i == 1) {
-      imageURL = CURB_POSTER_URL;
+      image = Moon_Image;
     } else if (i == 2) {
-      imageURL = EAST_LOS_HIGH_POSTER_URL;
+      image = Song_Image;
     }
 
     const nextCard = templateCard.cloneNode(true); // Copy the template card
-    editCardContent(nextCard, title, imageURL); // Edit title and image
+    editCardContent(nextCard, title, image); // Edit title and image
     cardContainer.appendChild(nextCard); // Add new card to the container
   }
 }
 
-function editCardContent(card, newTitle, newImageURL) {
+function editCardContent(card, newTitle, newImage) {
   card.style.display = "block";
 
   const cardHeader = card.querySelector("h2");
   cardHeader.textContent = newTitle;
 
   const cardImage = card.querySelector("img");
-  cardImage.src = newImageURL;
+  cardImage.src = newImage;
   cardImage.alt = newTitle + " Poster";
 
   // You can use console.log to help you debug!
@@ -80,18 +82,77 @@ function editCardContent(card, newTitle, newImageURL) {
   // select "Inspect", then click on the "Console" tab
   console.log("new card:", newTitle, "- html: ", card);
 }
+//this function is all the info of the user such as birth date and city
+
+function savebirthdate(){ 
+
+  const birthdate = document.getElementById("birthdate").value; //this would store the users birthdate
+  const dateObj = new Date(birthdate); //this allows javascript to do math with birth date
+  const unixTime = Math.floor(dateObj.getTime() / 1000); //got this online allows accurate unix time stamp return
+  console.log("UNIX timestamp:", unixTime);
+
+//Converting Location City and State to Long and Lat
+  const location = document.getElementById("location").value; //this would hold users city and state
+  const encodedLocation = encodeURIComponent(location); //this would turn users location input to API format
+  console.log(encodedLocation); //this grabs and stores users api format location to be called by API Key
+  const OpenCage_API_Key = "95c5ef52b4ed48db8a35c424cae90be7"; //stores API Key for Open Cage not best practice
+  const apiOpenCageUrl = `https://api.opencagedata.com/geocode/v1/json?q=${encodedLocation}&key=${OpenCage_API_Key }`; //Store APIs URL
+  
+  fetch(apiOpenCageUrl)
+    .then(response => response.json())
+    .then(data=> {
+      const lat = data.results [0].geometry.lat;
+      const lng = data.results [0].geometry.lng;
+      //Here we will nest our Weather API so that before we pass 
+      //so that we make sure weather api grabs long and lat from 
+      //Open API before making api request
+      const Weather_API_Key = "e40e8c7f7be8a902adb1a95495456c41";
+      const WeatherAPIUrl = `https://api.openweathermap.org/data/3.0/onecall/timemachine?lat=${lat}&lon=${lng}&dt=${unixTime}&appid=${Weather_API_Key}&units=imperial`;
+      fetch(WeatherAPIUrl)
+      .then(response => response.json())
+      .then(data => {
+        const weather = data.data[0]
+        const temperature = weather.temp;
+        const description = weather.weather[0].description;
+        console.log(`Weather on your birthday: ${description}, ${temperature}°F`);
+        const weatherResult = document.getElementById("weather-result");
+        weatherResult.innerText = `Weather on your birthday was: ${description}, ${temperature}°F`;
+      })
+
+
+      console.log("Latitude", lat);
+      console.log("Longtitude", lng);
+    })
+    .catch(error=>{
+      console.error("Please enter CITY and then STATE",error);
+    });
+
+
+const user = {
+  birthdate: birthdate,
+  location: location
+};
+
+console.log(user);
+}
 
 // This calls the addCards() function when the page is first loaded
 document.addEventListener("DOMContentLoaded", showCards);
 
 function quoteAlert() {
-  console.log("Button Clicked!");
+  console.log("Today's Message is");
   alert(
-    "I guess I can kiss heaven goodbye, because it got to be a sin to look this good!"
+    "Live today like no Tomorrow"
   );
 }
 
 function removeLastCard() {
   titles.pop(); // Remove last item in titles array
   showCards(); // Call showCards again to refresh
+
+
+}
+
+function restart() {
+  window.location.reload()
 }
